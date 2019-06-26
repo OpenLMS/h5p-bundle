@@ -124,7 +124,7 @@ class H5POptions
 
     public function getH5PAssetPath()
     {
-        return '/bundles/emmedyh5p/h5p';
+        return '/bundles/H5P/h5p';
     }
 
 }

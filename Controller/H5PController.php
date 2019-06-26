@@ -3,10 +3,12 @@
 namespace OpenLMS\H5PBundle\Controller;
 
 
+use OpenLMS\H5PBundle\Core\H5PIntegration;
 use OpenLMS\H5PBundle\Editor\Utilities;
 use OpenLMS\H5PBundle\Entity\Content;
 use OpenLMS\H5PBundle\Form\Type\H5pType;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
@@ -18,16 +20,16 @@ class H5PController extends Controller
     /**
      * @Route("list")
      */
-    public function listAction()
+    public function listAction(): ResponseAlias
     {
         $contents = $this->getDoctrine()->getRepository('H5PBundle:Content')->findAll();
-        return $this->render('@EmmedyH5P/list.html.twig', ['contents' => $contents]);
+        return $this->render('@H5P/list.html.twig', ['contents' => $contents]);
     }
 
     /**
      * @Route("show/{content}")
      * @param Content $content
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return ResponseAlias
      */
     public function showAction(Content $content)
     {
@@ -54,29 +56,39 @@ class H5PController extends Controller
             $h5pIntegration['contents'][$contentIdStr]['styles'] = $cssFilePaths;
         }
 
-        return $this->render('@EmmedyH5P/show.html.twig', ['contentId' => $content->getId(), 'isFrame' => $content->getLibrary()->isFrame(), 'h5pIntegration' => $h5pIntegration, 'files' => $files]);
+        return $this->render('@H5P/show.html.twig', ['contentId' => $content->getId(), 'isFrame' => $content->getLibrary()->isFrame(), 'h5pIntegration' => $h5pIntegration, 'files' => $files]);
     }
 
     /**
      * @Route("new")
+     * @param Request $request
+     * @param H5PIntegration $H5PIntegration
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|ResponseAlias
      */
-    public function newAction(Request $request)
+    public function newAction(Request $request, H5PIntegration $H5PIntegration)
     {
-        return $this->handleRequest($request);
+        return $this->handleRequest($request, $H5PIntegration);
     }
 
     /**
      * @Route("edit/{content}")
      * @param Request $request
+     * @param H5PIntegration $H5PIntegration
      * @param Content $content
-     * @return \Symfony\Component\HttpFoundation\RedirectResponse|\Symfony\Component\HttpFoundation\Response
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|ResponseAlias
      */
-    public function editAction(Request $request, Content $content)
+    public function editAction(Request $request, H5PIntegration $H5PIntegration, Content $content)
     {
-        return $this->handleRequest($request, $content);
+        return $this->handleRequest($request, $H5PIntegration, $content);
     }
 
-    private function handleRequest(Request $request, Content $content = null)
+    /**
+     * @param Request $request
+     * @param H5PIntegration $H5PIntegration
+     * @param Content|null $content
+     * @return \Symfony\Component\HttpFoundation\RedirectResponse|ResponseAlias
+     */
+    private function handleRequest(Request $request, H5PIntegration $H5PIntegration, Content $content = null)
     {
         $formData = null;
         if ($content) {
@@ -85,16 +97,16 @@ class H5PController extends Controller
         }
         $form = $this->createForm(H5pType::class, $formData);
         $form->handleRequest($request);
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
 
             $data = $form->getData();
             $contentId = $this->get('openlms_h5p.library_storage')->storeLibraryData($data['library'], $data['parameters'], $content);
 
             return $this->redirectToRoute('openlms_h5p_h5p_show', ['content' => $contentId]);
         }
-        $h5pIntegration = $this->get('openlms_h5p.integration')->getEditorIntegrationSettings($content ? $content->getId() : null);
+        $h5pIntegration = $H5PIntegration->getEditorIntegrationSettings($content ? $content->getId() : null);
 
-        return $this->render('@EmmedyH5P/edit.html.twig', ['form' => $form->createView(), 'h5pIntegration' => $h5pIntegration, 'h5pCoreTranslations' => $this->get('openlms_h5p.integration')->getTranslationFilePath()]);
+        return $this->render('@H5P/edit.html.twig', ['form' => $form->createView(), 'h5pIntegration' => $h5pIntegration, 'h5pCoreTranslations' => $this->get('openlms_h5p.integration')->getTranslationFilePath()]);
     }
 
     /**
