@@ -1,0 +1,3 @@
+openlms_h5p.test:
+    resource: "@H5PBundle/Controller/H5PController.php"
+    type:     annotation

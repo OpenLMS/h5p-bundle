@@ -1,0 +1,61 @@
+services:
+
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    OpenLMS\H5PBundle\Core\H5POptions:
+        arguments:
+            $config: []
+            $projectRootDir: '%kernel.project_dir%'
+
+
+    OpenLMS\H5PBundle\Editor\EditorStorage: ~
+
+    OpenLMS\H5PBundle\Core\H5PSymfony: ~
+
+
+    H5PFrameworkInterface: '@OpenLMS\H5PBundle\Core\H5PSymfony'
+
+    openlms_h5p.core:
+        class: H5PCore
+        arguments: ['@H5PFrameworkInterface', ~, ~]
+
+    openlms_h5p.editor_ajax:
+        class: OpenLMS\H5PBundle\Editor\EditorAjax
+        arguments: ['@doctrine.orm.entity_manager', '@security.token_storage']
+
+    openlms_h5p.editor:
+        class: H5peditor
+        arguments: ['@openlms_h5p.core', '@openlms_h5p.editor_storage', '@openlms_h5p.editor_ajax']
+
+    openlms_h5p.validator:
+        class: H5PValidator
+        arguments:  ['@openlms_h5p.core']
+
+    openlms_h5p.storage:
+        class: H5PStorage
+        arguments: [ '@openlms_h5p.core']
+
+    openlms_h5p.contentvalidator:
+        class: H5PContentValidator
+        arguments: [ 'H5PFrameworkInterface', '@openlms_h5p.core']
+
+    openlms_h5p.export:
+        class: H5PExport
+        arguments: [ '@openlms_h5p.core']
+
+    OpenLMS\H5PBundle\Core\H5PIntegration:
+        arguments: ['@openlms_h5p.core', '@OpenLMS\H5PBundle\Core\H5POptions', '@security.token_storage', '@doctrine.orm.entity_manager', '@router', '@request_stack', '@assets.packages', '@openlms_h5p.contentvalidator']
+        autowire: false
+
+    openlms_h5p.library_storage:
+        class: OpenLMS\H5PBundle\Editor\LibraryStorage
+        arguments: ['@openlms_h5p.core', '@openlms_h5p.editor']
+
+    openlms_h5p.twig.h5p_extension:
+        class: OpenLMS\H5PBundle\Twig\H5PExtension
+        arguments: ['@OpenLMS\H5PBundle\Core\H5PIntegration']
+        tags:
+            - { name: twig.extension }

@@ -1,0 +1,7 @@
+openlms_h5p.ajax:
+    resource: "@H5PBundle/Controller/AjaxController.php"
+    type:     annotation
+
+openlms_h5p.interaction:
+    resource: "@H5PBundle/Controller/InteractionController.php"
+    type:     annotation
